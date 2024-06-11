@@ -1,31 +1,12 @@
+import faster_whisper as whisper
 import torch
-from transformers import AutoModelForSpeechSeq2Seq, AutoProcessor, pipeline
 
+device="cuda" if torch.cuda.is_available() else "cpu"
+model_type="tiny.en"
 
-device = "cuda:0" if torch.cuda.is_available() else "cpu"
-torch_dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+model = whisper.WhisperModel(model_type, device=device, compute_type="int8")
+segments, _ = model.transcribe("test.mp3")
+segments = list(segments)
 
-model_id = "openai/whisper-large-v3"
-
-model = AutoModelForSpeechSeq2Seq.from_pretrained(
-    model_id, torch_dtype=torch_dtype, low_cpu_mem_usage=True, use_safetensors=True
-)
-model.to(device)
-
-processor = AutoProcessor.from_pretrained(model_id)
-
-pipe = pipeline(
-    "automatic-speech-recognition",
-    model=model,
-    tokenizer=processor.tokenizer,
-    feature_extractor=processor.feature_extractor,
-    max_new_tokens=128,
-    chunk_length_s=30,
-    batch_size=16,
-    return_timestamps=True,
-    torch_dtype=torch_dtype,
-    device=device,
-)
-
-result = pipe("test.mp3")
-print(result["text"])
+for segment in segments:
+    print(segment.text)
