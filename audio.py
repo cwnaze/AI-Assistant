@@ -9,7 +9,7 @@ from google.cloud import texttospeech
 
 STT_URL = "https://api-inference.huggingface.co/models/openai/whisper-tiny.en"
 
-token = "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"
+token = "API KEY"
 
 headers = {"Authorization": f'Bearer {token}'}
 
@@ -132,7 +132,7 @@ def prompt_tts(prompt):
     # Names of voices can be retrieved with client.list_voices().
     voice = texttospeech.VoiceSelectionParams(
         language_code="en-US",
-        name="en-US-Studio-O",
+        name="en-US-Standard-G",
     )
 
     audio_config = texttospeech.AudioConfig(
