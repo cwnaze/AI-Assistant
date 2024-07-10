@@ -46,6 +46,7 @@ def listen_keyword():
             output = query("temp_audio.wav")
             print(output["text"])
             if "hey robot" in output["text"].lower() or "hey, robot" in output["text"].lower():
+                os.remove("temp_audio.wav")
                 stream.stop_stream()
                 stream.close()
                 p.terminate()
@@ -83,6 +84,7 @@ def listen_ai():
 
             output = query("temp_audio.wav")
             if output["text"] == " you":
+                os.remove("temp_audio.wav")
                 stream.stop_stream()
                 stream.close()
                 p.terminate()
