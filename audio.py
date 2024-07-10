@@ -1,16 +1,17 @@
 import pyaudio
 import wave
 import os
-import requests
+from huggingface_hub import InferenceClient
 import requests
 from tempfile import NamedTemporaryFile
 from playsound import playsound
+from google.cloud import texttospeech
 
 STT_URL = "https://api-inference.huggingface.co/models/openai/whisper-tiny.en"
-LLM_URL = "https://api-inference.huggingface.co/models/mistralai/Mistral-7B-Instruct-v0.2"
-TTS_URL = "https://api-inference.huggingface.co/models/facebook/mms-tts-eng"
 
-headers = {"Authorization": "TOKEN HERE"}
+token = "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"
+
+headers = {"Authorization": f'Bearer {token}'}
 
 def record_audio(p, stream, rec_seconds, rate, chunk):
     frames = []
@@ -44,7 +45,13 @@ def listen_keyword():
                 return response.json()
 
             output = query("temp_audio.wav")
+
+            if "text" not in output:
+                os.remove("temp_audio.wav")
+                continue
+
             print(output["text"])
+            
             if "hey robot" in output["text"].lower() or "hey, robot" in output["text"].lower():
                 os.remove("temp_audio.wav")
                 stream.stop_stream()
@@ -62,7 +69,7 @@ def listen_keyword():
         print("Recording stopped")
 
 def listen_ai():
-    print("ai is listening now")
+    prompt_tts("what is it, sir")
     FORMAT = pyaudio.paInt16
     CHANNELS = 1
     RATE = 16000
@@ -83,7 +90,7 @@ def listen_ai():
                 return response.json()
 
             output = query("temp_audio.wav")
-            if output["text"] == " you":
+            if "text" not in output or output["text"] == " you":
                 os.remove("temp_audio.wav")
                 stream.stop_stream()
                 stream.close()
@@ -102,28 +109,44 @@ def listen_ai():
         print("Recording stopped")
 
 def prompt_llm(prompt):
-    def query(payload):
-        response = requests.post(LLM_URL, headers=headers, json=payload)
-        return response.json()
-	
-    output = query({
-	    "inputs": f'You are a helpful and honest assistant. Please, respond concisely and truthfully. {prompt}',
-    })
+    result = ""
+    client = InferenceClient(
+        "meta-llama/Meta-Llama-3-8B-Instruct",
+        token=token,
+    )
 
-    print(output[0].get("generated_text"))
-    prompt_tts(output[0].get("generated_text"))
+    for message in client.chat_completion(
+        messages=[{"role": "user", "content": prompt}],
+        max_tokens=500,
+        stream=True,
+    ):
+        result += message.choices[0].delta.content
+
+    prompt_tts(result)
 
 def prompt_tts(prompt):
-    def query(payload):
-        response = requests.post(TTS_URL, headers=headers, json=payload)
-        return response.content
+    client = texttospeech.TextToSpeechClient()
+    input_text = texttospeech.SynthesisInput(text=str(prompt))
 
-    audio_bytes = query({
-        "inputs": prompt,
-    })
+    # Note: the voice can also be specified by name.
+    # Names of voices can be retrieved with client.list_voices().
+    voice = texttospeech.VoiceSelectionParams(
+        language_code="en-US",
+        name="en-US-Studio-O",
+    )
 
+    audio_config = texttospeech.AudioConfig(
+        audio_encoding=texttospeech.AudioEncoding.LINEAR16,
+        speaking_rate=1
+    )
+
+    response = client.synthesize_speech(
+        request={"input": input_text, "voice": voice, "audio_config": audio_config}
+    )
+
+    # The response's audio_content is binary.
     with NamedTemporaryFile(delete=False, suffix='.wav') as f:
-        f.write(audio_bytes)
+        f.write(response.audio_content)
         playsound(f.name)
 
 listen_keyword()
