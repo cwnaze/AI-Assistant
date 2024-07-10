@@ -9,7 +9,7 @@ from google.cloud import texttospeech
 
 STT_URL = "https://api-inference.huggingface.co/models/openai/whisper-tiny.en"
 
-token = "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"
+token = "API KEY"
 
 headers = {"Authorization": f'Bearer {token}'}
 
