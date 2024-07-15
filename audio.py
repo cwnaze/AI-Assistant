@@ -9,7 +9,7 @@ from google.cloud import texttospeech
 
 STT_URL = "https://api-inference.huggingface.co/models/openai/whisper-tiny.en"
 
-token = "API KEY"
+token = "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"
 
 headers = {"Authorization": f'Bearer {token}'}
 
@@ -57,6 +57,7 @@ def listen_keyword():
                 stream.stop_stream()
                 stream.close()
                 p.terminate()
+                prompt_tts("what is it, sir")
                 listen_ai()
                 break
             os.remove("temp_audio.wav")
@@ -69,7 +70,6 @@ def listen_keyword():
         print("Recording stopped")
 
 def listen_ai():
-    prompt_tts("what is it, sir")
     FORMAT = pyaudio.paInt16
     CHANNELS = 1
     RATE = 16000
@@ -123,6 +123,7 @@ def prompt_llm(prompt):
         result += message.choices[0].delta.content
 
     prompt_tts(result)
+    listen_ai()
 
 def prompt_tts(prompt):
     client = texttospeech.TextToSpeechClient()
