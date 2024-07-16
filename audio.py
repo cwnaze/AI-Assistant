@@ -95,7 +95,7 @@ def listen_ai():
                 stream.stop_stream()
                 stream.close()
                 p.terminate()
-                if "text" not in output or output["text"] == " you" or output["text"] == " " or output["text"] == "":
+                if "text" not in prompt or prompt == " you" or prompt == " " or prompt == "":
                     listen_keyword()
                 prompt_llm(prompt)
                 break
@@ -115,6 +115,7 @@ def prompt_llm(prompt):
     client = InferenceClient(
         "meta-llama/Meta-Llama-3-8B-Instruct",
         token=token,
+        persistant="chat_state.json"
     )
 
     for message in client.chat_completion(
