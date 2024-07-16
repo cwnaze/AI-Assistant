@@ -9,7 +9,7 @@ from google.cloud import texttospeech
 
 STT_URL = "https://api-inference.huggingface.co/models/openai/whisper-tiny.en"
 
-token = "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"
+token = "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"
 
 headers = {"Authorization": f'Bearer {token}'}
 
@@ -90,11 +90,13 @@ def listen_ai():
                 return response.json()
 
             output = query("temp_audio.wav")
-            if "text" not in output or output["text"] == " you":
+            if "text" not in output or output["text"] == " you" or output["text"] == " " or output["text"] == "":
                 os.remove("temp_audio.wav")
                 stream.stop_stream()
                 stream.close()
                 p.terminate()
+                if "text" not in output or output["text"] == " you" or output["text"] == " " or output["text"] == "":
+                    listen_keyword()
                 prompt_llm(prompt)
                 break
             print(output["text"])
@@ -122,6 +124,7 @@ def prompt_llm(prompt):
     ):
         result += message.choices[0].delta.content
 
+    print(result)
     prompt_tts(result)
     listen_ai()
 
