@@ -6,6 +6,8 @@ import requests
 from tempfile import NamedTemporaryFile
 from playsound import playsound
 from google.cloud import texttospeech
+import json
+import uuid
 
 STT_URL = "https://api-inference.huggingface.co/models/openai/whisper-tiny.en"
 
@@ -95,7 +97,7 @@ def listen_ai():
                 stream.stop_stream()
                 stream.close()
                 p.terminate()
-                if "text" not in prompt or prompt == " you" or prompt == " " or prompt == "":
+                if prompt == " you" or prompt == " " or prompt == "":
                     listen_keyword()
                 prompt_llm(prompt)
                 break
@@ -115,15 +117,37 @@ def prompt_llm(prompt):
     client = InferenceClient(
         "meta-llama/Meta-Llama-3-8B-Instruct",
         token=token,
-        persistant="chat_state.json"
     )
 
+    f = open('chat_history.json')
+    data = json.load(f)
+
     for message in client.chat_completion(
-        messages=[{"role": "user", "content": prompt}],
+        messages=[
+            {"role": "system", "content": str(data)},
+            {"role": "user", "content": prompt}
+            ],
         max_tokens=500,
         stream=True,
     ):
         result += message.choices[0].delta.content
+
+    dictionary = {}
+
+    for i in data:
+        dictionary[i] = data[i]
+
+    dictionary[str(uuid.uuid4())] = {
+        "prompt": prompt,
+        "response": result
+    }
+
+    # Serializing json
+    json_object = json.dumps(dictionary, indent=4)
+    
+    # Writing to sample.json
+    with open("chat_history.json", "w") as outfile:
+        outfile.write(json_object)
 
     print(result)
     prompt_tts(result)
