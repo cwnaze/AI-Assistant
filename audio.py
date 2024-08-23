@@ -11,7 +11,7 @@ import uuid
 
 STT_URL = "https://api-inference.huggingface.co/models/openai/whisper-tiny.en"
 
-token = "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"
+token = ""
 
 headers = {"Authorization": f'Bearer {token}'}
 
